@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Определение адреса клика на карте с помощью обратного геокодирования</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+          crossorigin="anonymous">
+    <link rel="icon" href="data:,">
+    <title>{{title}}</title>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&amp;apikey=40d1649f-0493-4b70-98ba-98533de7710b" type="text/javascript"></script>
+    <script type="text/javascript">
+        ymaps.ready(init);
+
+function init() {
+    var myMap = new ymaps.Map('map', {
+        center: {{coord}},
+        zoom: 9
+    });
+
+
+    {% for item in requests %}
+    // Поиск координат центра .
+    {% if item["request"].is_active and (not item["request"].provider_id or item["request"].provider_id == current_user.id or current_user.id == item["request"].sender_id)%}
+    ymaps.geocode('{{item["request"].address}}', {
+        results: 1
+    }).then(function (res) {
+            // Выбираем первый результат геокодирования.
+            var firstGeoObject = res.geoObjects.get(0),
+                // Координаты геообъекта.
+                coords = firstGeoObject.geometry.getCoordinates(),
+                // Область видимости геообъекта.
+                bounds = firstGeoObject.properties.get('boundedBy');
+
+            var myPlacemark = new ymaps.Placemark(coords, {
+            // Зададим содержимое заголовка балуна.
+        balloonContentHeader: '<a>{{item["request"].name}}</a><br>',
+        // Зададим содержимое основной части балуна.
+        {% if item["request"].id not in ingoing_requests_ids and item["request"].id not in outgoing_requests_ids and current_user.is_authenticated%}
+            balloonContentBody: '{{item["request"].description}}<br><a class="btn btn-primary " href="/request_ingoing/{{item["request"].id}}">Выполнить</a>',
+        {% else %}
+                balloonContentBody: '{{item["request"].description}}<br>',
+        {% endif %}
+        // Зададим содержимое нижней части балуна.
+        balloonContentFooter: 'Отправил: {{item["user"]}}<br>Адрес: {{item["request"].address}}<br>Контакты<br>{{item["email"]}}<br>{{item["telephone"]}}',
+        // Зададим содержимое всплывающей подсказки.
+        hintContent: '{{item["request"].name}}'
+        }, {
+            preset: 'islands#dotIcon',
+            iconColor: '#735184'
+        });
+
+            myMap.geoObjects.add(myPlacemark);
+        myMap.setBounds(bounds, {
+                // Проверяем наличие тайлов на данном масштабе.
+                checkZoomRange: true
+            });
+        });
+      {% endif %}
+      {% endfor %}
+}
+</script>
+    <style type="text/css">
+        html, body {
+            width: 100%;
+            height: 95%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial;
+            font-size: 14px;
+        }
+        #map {
+            width: 100%;
+            height: 95%;
+        }
+        .header {
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-light bg-light">
+        <a class="navbar-brand" href="/">#помогимне</a>
+        {% if current_user.is_authenticated %}
+        <p>
+        <a class="navbar-brand" href="/logout">{{ current_user.name + " " + current_user.surname}}</a>
+        <a class="btn btn-danger" href="/map">Карта</a>
+        <a class="btn btn-success" href="/profile">Профиль</a>
+        </p>
+        {% else %}
+        <p>
+        <a class="btn btn-primary " href="/register">Зарегистрироваться</a>
+        <a class="btn btn-success" href="/login">Войти</a>
+            <a class="btn btn-danger" href="/map">Карта</a>
+        </p>
+{% endif %}
+    </nav>
+</header>
+<div id="map"></div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Профиль</h1>
+<div class="col-md8">
+    <div>{{current_user.name + " " + current_user.surname}}</div>
+    <div>Город - {{ current_user.address["city"] }}, Улица - {{ current_user.address["street"] }}, Дом - {{
+        current_user.address["building"] }}, Квартира - {{ current_user.address["flat"] }}
+    </div>
+    <div>Номер телефона - {{ current_user.telephone_number }}</div>
+    <div>Электронная почта - {{ current_user.email }}</div>
+    <div>О себе - {{ current_user.about }}</div>
+</div>
+<div class="btn-group" role="group" aria-label="Basic example">
+    <a class="btn btn-secondary" href="/profile/switch/ingoing">Входящие</a>
+    <a type="button" class="btn btn-secondary" href="/profile/switch/outgoing">Исходящие</a>
+</div>
+<div>
+    <a type="button" class="btn btn-primary" href="/request">Создать запрос</a>
+</div>
+
+
+{% for item, user in requests %}
+<div class="col-md6 border rounded">
+    {% if current_user.is_authenticated and flag and item.is_active%}
+        <a href="/request/{{ item.id }}" class="btn btn-warning">Изменить</a>
+        <a href="/request_delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
+        <a href="/request_deactivate/{{ item.id }}" class="btn btn-success">В архив</a>
+        <h2>{{item.name}}</h2>
+    <div>
+        {{item.description}}
+    </div>
+    <div>
+        <p>Адрес - {{item.address}}<br>
+        Отправитель - {{user.name + " " + user.surname}}<br>
+        Email - {{user.email}}<br>
+        Телефон - {{user.telephone_number}}</p>
+    </div>
+    {% elif current_user.is_authenticated and flag and not item.is_active %}
+        <a href="/request_activate/{{ item.id }}" class="btn btn-success">Активировать</a>
+        <h2>{{item.name}}</h2>
+    <div>
+        {{item.description}}
+    </div>
+    <div>
+        <p>Адрес - {{item.address}}<br>
+        Отправитель - {{user.name + " " + user.surname}}<br>
+        Email - {{user.email}}<br>
+        Телефон - {{user.telephone_number}}</p>
+    </div>
+
+    {% elif current_user.is_authenticated and not flag and item.is_active%}
+        <a href="/request_deactivate/{{ item.id }}" class="btn btn-success">Завершить</a>
+        <h2>{{item.name}}</h2>
+    <div>
+        {{item.description}}
+    </div>
+    <div>
+        <p>Адрес - {{item.address}}<br>
+        Отправитель - {{user.name + " " + user.surname}}<br>
+        Email - {{user.email}}<br>
+            Телефон - {{user.telephone_number}}</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endfor %}
+{% endblock %}
